@@ -252,8 +252,8 @@ def createNewStopwords(textFileName):
 def main():
   #download nltk stopwords list
   nltk.download('stopwords')
-  
-  #Our movie transcript string path of txt file 
+
+  #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
   textFileName = 'KUNG FU PANDA Script.txt'
 
   #create our own stopword list since nltk's stopword list may not remove all stopwords we need.
