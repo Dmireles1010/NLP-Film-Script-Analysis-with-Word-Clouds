@@ -83,7 +83,8 @@ def parseText(textFileName):
 
 
       # if there's a good amount of whitespace to the left and currentlySpeaking boolean is true, this is a spoken line
-      if (len(line) - len(line.lstrip()) > 4) and currentlySpeaking:
+      # Note: the whitespace indentions in text file may be tabs or spaces. Using integer 2 to satisfy both cases.
+      if (len(line) - len(line.lstrip()) >= 2) and currentlySpeaking:
           #strip extra characters such as paranthesis in character's name
           currentSpeaker=stripExtra(currentSpeaker)
           if '(' in line or ')' in line:
@@ -100,10 +101,10 @@ def parseText(textFileName):
             if currentSpeaker not in charWordDic:
               charWordDic[currentSpeaker]={}
               #striping useless characters from word such as -- , . ? !
-              word = re.sub(r"[^\w\s'-]", '', word) 
+              word = re.sub(r"[^\w\s'-]", ' ', word).strip()
               charWordDic[currentSpeaker][word.lower()]=1
             else:
-                word = re.sub(r"[^\w\s'-]", '', word) 
+                word = re.sub(r"[^\w\s'-]", ' ', word).strip() 
                 if word.lower() not in charWordDic[currentSpeaker]:
                   charWordDic[currentSpeaker][word.lower()]=1
                 else: 
@@ -115,7 +116,7 @@ def parseText(textFileName):
           # spoken_text += line.lstrip()
 
           #strip all words that are in paranthesis since it is not dialogue
-          spoken_text+=re.sub(r"\(.*?\)", '', line.lstrip()) 
+          spoken_text+=re.sub(r"\(.*?\)|[^\w\s'-]", ' ', line.lstrip())
 
   #return the only the dialogue text and a dictionary of each characters said words in dialogue with word counter. Example: {character : {word : 2 , anotherword : 4} }
   return spoken_text, charWordDic
@@ -167,16 +168,20 @@ def removeStopwordsDic(dic,stopwords):
   #create temp dictionary that will contain no stopwords
   characterDic={}
   
-  for word in dic:
+  for character in dic:
     #only include words not in stopword lists
-    if word.isalpha() and word.lower() not in stopwords and word.lower() not in stopwords2:
-      characterDic[word]=dic[word]
+    # print(character)
+    characterDic[character]={}
+    for word in dic[character]:
+      if word.isalpha() and word.lower() not in stopwords and word.lower() not in stopwords2:
+        characterDic[character][word]=dic[character][word]
+        # print(word)
 
   #return a dictionary of each characters said words in dialogue with word counter with no stopwords. 
   #formated as such {character : {word : 2 , anotherword : 4} }
   return characterDic
 
-def formatnSortByChar(dic,text,stopwords,common):
+def formatnSortByChar(dic,text,common):
   """This function returns a formated string of the words each character has said in common with the text
    
   Args:
@@ -184,8 +189,6 @@ def formatnSortByChar(dic,text,stopwords,common):
                         dictionary is formated as such {character : {word : 2 , anotherword : 4} }
 
       text (string): a corpus of only dialogue 
-
-      stopwords (list): of your own stopwords
 
       common (list): a list of tuples that include the word and amount of times frequently said.
                      list is formated as such: [(word,2),(anotherword,4),(newword,3)]
@@ -202,14 +205,14 @@ def formatnSortByChar(dic,text,stopwords,common):
 
   """
   #remove any character that is not a letter or ' from text 
-  text = re.sub(r"[^\w\s'-]", '', text) 
+  # text = re.sub(r"[^\w\s'-]", ' ', text) 
 
   text = ''
 
   for character in dic:
     boolean = False
-    characterDic = removeStopwordsDic(dic[character],stopwords)
-    sort_orders = sorted(characterDic.items(), key=lambda x: x[1], reverse=True)
+    # characterDic = removeStopwordsDic(dic[character],stopwords)
+    sort_orders = sorted(dic[character].items(), key=lambda x: x[1], reverse=True)
     
     for i in sort_orders:
       #only show the words that are in common throughout the text
@@ -254,7 +257,7 @@ def main():
   nltk.download('stopwords')
 
   #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
-  textFileName = 'KUNG FU PANDA Script.txt'
+  textFileName = 'LegoMovie.txt'
 
   #create our own stopword list since nltk's stopword list may not remove all stopwords we need.
   #stopwords from https://www.ranks.nl/stopwords
@@ -263,11 +266,14 @@ def main():
   #parse the text and get the dialogue only text and also the character word counter dictionary
   spoken_text, charWordDic = parseText(textFileName)
 
-  #Get 100 most common words from dialogue text
-  common = commonWords(spoken_text,100,stopwords)
+  #remove stopwords from dictionary 
+  charWordDic = removeStopwordsDic(charWordDic,stopwords)
+
+  #Get 150 most common words from dialogue text
+  common = commonWords(spoken_text,150,stopwords)
 
   #string that is formated to show only the words that each character said that is commonly said throughout the text 
-  formatedString = formatnSortByChar(charWordDic,spoken_text,stopwords,common)
+  formatedString = formatnSortByChar(charWordDic,spoken_text,common)
 
   #Common Words said in all dialogue of film
   print(common)
