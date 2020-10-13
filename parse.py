@@ -38,7 +38,7 @@ def parseText(textFileName):
 
   # using https://www.imsdb.com/ as script. Highlight/copy script and save to a text file
   charWordDic = {}
-  with codecs.open(textFileName, 'r', 'utf8') as f:
+  with codecs.open(textFileName, 'r', 'utf-8') as f:
     # read the file content
     f = f.read()
     # store all the clean text that's accumulated
@@ -257,7 +257,7 @@ def main():
   nltk.download('stopwords')
 
   #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
-  textFileName = 'LegoMovie.txt'
+  textFileName = 'newbeemovie.txt'
 
   #create our own stopword list since nltk's stopword list may not remove all stopwords we need.
   #stopwords from https://www.ranks.nl/stopwords
@@ -270,7 +270,7 @@ def main():
   charWordDic = removeStopwordsDic(charWordDic,stopwords)
 
   #Get 150 most common words from dialogue text
-  common = commonWords(spoken_text,150,stopwords)
+  common = commonWords(spoken_text,100,stopwords)
 
   #string that is formated to show only the words that each character said that is commonly said throughout the text 
   formatedString = formatnSortByChar(charWordDic,spoken_text,common)
