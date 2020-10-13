@@ -257,7 +257,7 @@ def main():
   nltk.download('stopwords')
 
   #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
-  textFileName = 'newbeemovie.txt'
+  textFileName = 'NewBeeMovie.txt'
 
   #create our own stopword list since nltk's stopword list may not remove all stopwords we need.
   #stopwords from https://www.ranks.nl/stopwords
