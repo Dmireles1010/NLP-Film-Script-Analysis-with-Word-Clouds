@@ -84,7 +84,7 @@ def parseText(textFileName):
 
       # if there's a good amount of whitespace to the left and currentlySpeaking boolean is true, this is a spoken line
       # Note: the whitespace indentions in text file may be tabs or spaces. Using integer 2 to satisfy both cases.
-      if (len(line) - len(line.lstrip()) >= 2) and currentlySpeaking:
+      if (len(line) - len(line.lstrip()) >=2) and currentlySpeaking:
           #strip extra characters such as paranthesis in character's name
           currentSpeaker=stripExtra(currentSpeaker)
           if '(' in line or ')' in line:
@@ -97,29 +97,77 @@ def parseText(textFileName):
 
           #Needed to know count of word by each character
           #Dictionary of Characters containning amount of words
-          for word in words:
-            if currentSpeaker not in charWordDic:
-              charWordDic[currentSpeaker]={}
-              #striping useless characters from word such as -- , . ? !
-              word = re.sub(r"[^\w\s'-]", ' ', word).strip()
-              charWordDic[currentSpeaker][word.lower()]=1
-            else:
-                word = re.sub(r"[^\w\s'-]", ' ', word).strip() 
-                if word.lower() not in charWordDic[currentSpeaker]:
-                  charWordDic[currentSpeaker][word.lower()]=1
-                else: 
-                  #increment word count by one
-                  charWordDic[currentSpeaker][word.lower()]+=1  
+          entireWord = ""
 
+          #algorithm to find multiple word such that it should be one word. Like someone's First and Last Name said in a sentence
+          #Example in lego movie: Black Falcon
+          #Simialrly used in Common words function
+          for word in words:
+            if(word[0].isupper() and not word.isupper()):
+              find = re.compile("['.!?,]").search(word)
+              if find != None:
+                index=find.span()[0]
+                entireWord+=word[:index]
+                charWordDic=includeInCharacterDic(currentSpeaker,entireWord.strip().lower(), charWordDic)
+                entireWord=""
+                continue
+              else:
+                entireWord+=word.strip()+" "
+                continue
+            else:
+              find = re.compile("['.!?,]").search(word)
+              if find != None:
+                index=find.span()[0]
+                word=word[:index]
+
+              if(entireWord.strip()!=""):
+                charWordDic=includeInCharacterDic(currentSpeaker,entireWord.strip().lower(), charWordDic)
+                charWordDic=includeInCharacterDic(currentSpeaker,word.strip().lower(), charWordDic)
+                entireWord=""
+              else:
+                charWordDic=includeInCharacterDic(currentSpeaker,word.strip().lower(), charWordDic)
+                entireWord=""
+          #last case
+          if(entireWord.strip()!=""):
+            charWordDic=includeInCharacterDic(currentSpeaker,entireWord.strip().lower(), charWordDic)
 
           # # write the dialogue into after character's name or continue dialogue. 
           # spoken_text += line.lstrip()
 
           #strip all words that are in paranthesis since it is not dialogue
-          spoken_text+=re.sub(r"\(.*?\)|[^\w\s'-]", ' ', line.lstrip())
+          spoken_text+=re.sub(r"\(.*?\)|[^\w\s'.!?,]", '', line.lstrip()) 
 
   #return the only the dialogue text and a dictionary of each characters said words in dialogue with word counter. Example: {character : {word : 2 , anotherword : 4} }
   return spoken_text, charWordDic
+
+def includeInCharacterDic(currentSpeaker, word, charWordDic):
+  """This function inputs the word into the dictionary with the character and incrementing the word count 
+
+  Args:
+      currentSpeaker (string): name/of character in script.
+      word (string): word that is being placed into dictionary
+      dic (dictionary): a dictionary of each characters said words in dialogue with word counter.
+                        dictionary is formated as such {character : {word : 2 , anotherword : 4} }
+  
+  Returns:
+      charWordDic (dictionary): a dictionary of each characters said words in dialogue with word counter.
+                        dictionary is formated as such {character : {word : 2 , anotherword : 4} }
+  """
+  word=word.strip()
+  if currentSpeaker not in charWordDic:
+    charWordDic[currentSpeaker]={}
+    #striping useless characters from word such as -- , . ? !
+    word = re.sub(r"[^\w\s']", '', word) 
+    charWordDic[currentSpeaker][word.lower()]=1
+  else:
+      word = re.sub(r"[^\w\s']", '', word) 
+      if word.lower() not in charWordDic[currentSpeaker]:
+        charWordDic[currentSpeaker][word.lower()]=1
+      else: 
+        #increment word count by one
+        charWordDic[currentSpeaker][word.lower()]+=1  
+  return charWordDic
+
 
 def commonWords(text,amount,stopwords):
   """This function finds the common words of a dialogue only script excluding character's names.
@@ -142,11 +190,55 @@ def commonWords(text,amount,stopwords):
   #second list of stopwords
   stopwords2 = nltk.corpus.stopwords.words()
 
+
+  stopwordList=stopwords + list(set(stopwords2) - set(stopwords))
+
   #removes all stopwords from the list of words
-  cleansed_words = [word.lower() for word in words if word.isalpha() and word.lower() not in stopwords and word.lower() not in stopwords2]
+
+  #algorithm to find multiple word such that it should be one word. Like someone's First and Last Name said in a sentence
+  #Example in lego movie: Black Falcon
+  #Simialrly used in Parse Text function
+  entireWord=""
+  newWordsList=[]
+  for word in words:
+    if(word[0].isupper() and not word.isupper()):
+      find = re.compile("['.!?,]").search(word)
+      if find != None:
+        index=find.span()[0]
+        entireWord+=word[:index]
+        newWordsList.append(entireWord.strip())
+        entireWord=""
+        continue
+      else:
+        entireWord+=word+" "
+        continue
+    else:
+      find = re.compile("['.!?,]").search(word)
+      if find != None:
+        index=find.span()[0]
+        word=word[:index]
+
+      if(entireWord.strip()!=""):
+        newWordsList.append(entireWord.strip().lower())
+        newWordsList.append(word.strip().lower())
+        entireWord=""
+      else:
+        newWordsList.append(word.strip().lower())
+        entireWord=""
+  #last case
+  if(entireWord.strip()!=""):
+    newWordsList.append(entireWord.strip())
+
+
+  # cleansed_words = [word.lower() for word in newWordsList if word.isalpha() and word.lower() not in stopwordList]
+  cleansed_words=[]
+  for word in newWordsList:
+   if(word.lower() not in stopwordList and not word.isdigit() and word):
+    cleansed_words.append(word.lower())
 
   #using the nltk package, easily find most common words shown from the list of words
   fdist = nltk.FreqDist(cleansed_words)
+  # print(cleansed_words)
   common=fdist.most_common(amount)
 
   #returns a list of tuples that include the word and amount of times frequently said
@@ -164,7 +256,7 @@ def removeStopwordsDic(dic,stopwords):
                   dictionary is formated as such {character : {word : 2 , anotherword : 4} }
   """
   stopwords2 = nltk.corpus.stopwords.words()
-  
+  stopwordList=stopwords + list(set(stopwords2) - set(stopwords))
   #create temp dictionary that will contain no stopwords
   characterDic={}
   
@@ -173,7 +265,7 @@ def removeStopwordsDic(dic,stopwords):
     # print(character)
     characterDic[character]={}
     for word in dic[character]:
-      if word.isalpha() and word.lower() not in stopwords and word.lower() not in stopwords2:
+      if word.lower() not in stopwordList and not word.isdigit() and word.strip() and word:
         characterDic[character][word]=dic[character][word]
         # print(word)
 
@@ -216,6 +308,7 @@ def formatnSortByChar(dic,text,common):
     
     for i in sort_orders:
       #only show the words that are in common throughout the text
+      #character may have said more words but we're only showing those that are most common throughout the film
       if i[0] in [lis[0] for lis in common]:
         if not boolean:
           text +="\n\n"+ character
@@ -224,7 +317,7 @@ def formatnSortByChar(dic,text,common):
   return text
 
 #give each word said by each character a ratio based on amount said and how many characters said it.
-def ComputeWeightedRatio(dic):
+def computeWeightedRatio(dic):
   """This function should create a weighted ratio based on amount of times the word was said by character, said throughout the film, and how many characters said that word
   
   Args:
@@ -257,7 +350,7 @@ def main():
   nltk.download('stopwords')
 
   #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
-  textFileName = 'newbeemovie.txt'
+  textFileName = 'LegoMovie.txt'
 
   #create our own stopword list since nltk's stopword list may not remove all stopwords we need.
   #stopwords from https://www.ranks.nl/stopwords
@@ -270,7 +363,7 @@ def main():
   charWordDic = removeStopwordsDic(charWordDic,stopwords)
 
   #Get 150 most common words from dialogue text
-  common = commonWords(spoken_text,100,stopwords)
+  common = commonWords(spoken_text,50,stopwords)
 
   #string that is formated to show only the words that each character said that is commonly said throughout the text 
   formatedString = formatnSortByChar(charWordDic,spoken_text,common)
