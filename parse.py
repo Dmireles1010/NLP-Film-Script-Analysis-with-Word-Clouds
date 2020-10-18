@@ -349,6 +349,8 @@ def createNewStopwords(textFileName):
   Returns:
       list: of stopword strings
   """
+  #download nltk stopwords list
+  nltk.download('stopwords')
   stopwords = []
   with codecs.open(textFileName, 'r') as f:
     line = f.readlines()

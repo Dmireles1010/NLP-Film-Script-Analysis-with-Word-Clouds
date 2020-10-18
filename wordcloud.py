@@ -180,6 +180,8 @@ def parseFunction(fileName,amountOfCommon):
     #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
     textFileName = fileName
 
+    
+    
     #create our own stopword list since nltk's stopword list may not remove all stopwords we need.
     #stopwords from https://www.ranks.nl/stopwords
     stopwords = parse.createNewStopwords('stopwords.txt')
