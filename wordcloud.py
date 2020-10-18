@@ -1,6 +1,8 @@
 import tkinter as tk
 import random
 import parse
+from tkinter import simpledialog
+
 
 
 colors = ["blue","red","orange","green","purple"]
@@ -247,11 +249,20 @@ def generateNewSizes(tupleList,sizes,individualChar=False):
 
     return newTupleList
 
+def movieSelection():
+
+
+    userinput = tk.Tk()
+    userinput.withdraw()
+    USER_INP = simpledialog.askstring(title="Test",prompt="Enter Movie Title: ")
+    return USER_INP
+
 
 def main():
-
+  
+  
   #run parse function
-  fileName  = "FilmScripts/LegoMovie.txt"
+  fileName  = ("FilmScripts/"+movieSelection()+".txt")
   amountOfCommon = 100
   charWordDic , common = parseFunction(fileName,amountOfCommon)
 
@@ -261,17 +272,12 @@ def main():
   #generate wordCloud text sizes using default sizes. returns list tuple of (count,FontSize)
   tupleFontSizeList = generateNewSizes(common,sizes)
 
-
   #Generate UI
   root = tk.Tk()
   root.geometry("1124x768")
 
-
   mainFrame = tk.Frame(root, width=824, height=750)
   secondFrame = tk.Frame(root, width=192, height=750)
-
-
-
 
   mainFrame.config(bd=4, relief=tk.SOLID)
   secondFrame.config(bd=4, relief=tk.SOLID)
@@ -284,6 +290,7 @@ def main():
     else:
         newChar[char]=charDic
   #this will be the character buttons will probably create for loop and generate multiple buttons
+
 
 
   #Hover Overable label
