@@ -4,16 +4,20 @@ import parse
 
 
 colors = ["blue","red","orange","green","purple"]
+
+
+#word:[label,place]
+labelDic = {}
+#label placement coordinates
 placements = []
-
-
 class Text(tk.Label):
     """This class is used to generate the words in the word cloud. Also is used to create hover over text in second frame."""
-    def __init__(self,mainFrame,secondFrame, word, count, charDic,hoverLabel):
+    def __init__(self,mainFrame,secondFrame, word, count, charDic,hoverLabel,individualChar=False,char=None):
         self.label = tk.Label(mainFrame, text=word)
         self.count = count
         self.word = word
-
+        self.individualChar = individualChar
+        self.char = char
         self.hoverLabel = hoverLabel
         self.charDic = charDic
 
@@ -24,8 +28,12 @@ class Text(tk.Label):
 
     def hoverText(self):
         hoverString = "Word: "+self.word + "\nTotal : "+ str(self.count)+"\n"
-        
+        if(self.individualChar):
+            hoverString=self.char+"\nWord: "+self.word + "\nTotal : "+ str(self.count)+"\n"
+            return hoverString
+
         tupleList = []
+
         for char in self.charDic: 
             if(self.word in self.charDic[char]):
                 tupleList.append( (char,self.charDic[char][self.word]) )
@@ -43,9 +51,12 @@ class Text(tk.Label):
         self.hoverLabel.configure(text=hoverString)
 
     def on_leave(self, enter):
-        self.hoverLabel.configure(text="")
+        if(self.individualChar):
+            self.hoverLabel.configure(text=self.char+"\nHOVER OVER A WORD TO VIEW DETAILS")
+        else:
+            self.hoverLabel.configure(text="HOVER OVER A WORD TO VIEW DETAILS")
 
-def place_label(root, label, word,fontSize,dic={}):
+def place_label(root, label, word,fontSize):
     """This function is the algorithm to generate the word cloud word placements.
     
     Args:
@@ -68,6 +79,7 @@ def place_label(root, label, word,fontSize,dic={}):
         elif(tries>1000):
             newFont=5
             label.config(font=("Courier", newFont),fg=colors[colorIndex])
+            redo=False
         else:
             label.config(font=("Courier", fontSize),fg=colors[colorIndex])
         tries+=1
@@ -100,9 +112,10 @@ def place_label(root, label, word,fontSize,dic={}):
     place = [x, label.winfo_width()+x, xmid, y, label.winfo_height()+y, ymid]
 
     placements.append(place)
+    labelDic[word]=[label,place]
     # test[word][1]=place
     
-def createWordCloud(root,mainFrame,secondFrame, tuples, charDic, hoverLabel,tupleFontSizeList):
+def createWordCloud(root,mainFrame,secondFrame, tuples, charDic, hoverLabel,tupleFontSizeList,individualChar=False,char=None):
     """This function generates words and places the words in the frames
     
     Args:
@@ -115,41 +128,53 @@ def createWordCloud(root,mainFrame,secondFrame, tuples, charDic, hoverLabel,tupl
         newTupleSizes: list of tuple of wordcount and font size
     """
 
-
-    # print(len(tuples))
     # test = {}
     #tuples is a list of tuples. example: [(word, count), (word2, count)]
+
+    for word in labelDic:
+        label = labelDic[word][0]
+        label.destroy()
+    labelDic.clear()
+    placements.clear()
+
+
+
     index = 0
+
     for tup in tuples:
         word = tup[0]
         count = tup[1]
-        text = Text(mainFrame,secondFrame,word,count,charDic,hoverLabel)
+        text = Text(mainFrame,secondFrame,word,count,charDic,hoverLabel,individualChar,char)
 
-        # label = tk.Label(mainFrame, text=word)
 
-        # test[tup[0]]=[label,[]]
         size = tupleFontSizeList[index][1]
 
         place_label(root, text.label, word,size)
         index+=1
 
-#to do: when character button is pressed generate new word cloud based on only that character's words
-def createWordCloudChar(test,dic,tuples):
-    for tup in tuples: 
-        if(tup[0] in emmet):
-            test[tup[0]][0].place(x=test[tup[0]][1][2],y=test[tup[0]][1][5])
-            size = emmet[tup[0]]
-            test[tup[0]][0].config(font=("Courier", size),fg="blue")
-        else:
-            test[tup[0]][0].place(x=test[tup[0]][1][2],y=test[tup[0]][1][5])
-            # size = emmet[tup[0]]
-            test[tup[0]][0].config(font=("Courier"),fg="gray")
-            
+def createWordCloudChar(char,root,mainFrame,secondFrame,charWordDic, hoverLabel,common,sizes):
+    """This function generates words and places the words in the frames based on individual character
+    
+    Args:
+        char : string of name
+        root: tk root
+        mainFrame: tk frame
+        secondFrame: tk frame
+        charWordDic: dictionary of character and word with count
+        hoverLabel: tk label of hover text 
+        common: list of tuple of word and wordcount  
+        sizez: list of default sizes 
+    """
+    tupleList = []
+    # charDic=parse.keepInCommon(charWordDic[char],common)
+    for word in charWordDic[char]:
+        tupleList.append (  (word,charWordDic[char][word])  )
+    tupleFontSizeList = generateNewSizes(tupleList,sizes,True)
 
-def testCommand():
-    # tkMessageBox.showinfo( "Hello Python", "Hello World")
-    print("pressed button")
 
+    # createWordCloud(root,mainFrame,secondFrame,common, newChar, hoverLabel, tupleFontSizeList)
+    hoverLabel.configure(text=char+"\nHOVER OVER A WORD TO VIEW DETAILS")
+    createWordCloud(root,mainFrame,secondFrame, tupleList, charWordDic, hoverLabel,tupleFontSizeList,True,char)
 
 def parseFunction(fileName,amountOfCommon):
     #Our movie transcript string path of txt file using this transcript format only works so far https://www.imsdb.com/scripts/Kung-Fu-Panda.html/ 
@@ -173,14 +198,11 @@ def parseFunction(fileName,amountOfCommon):
 
     return charWordDic, common
 
-
-
-
-def createRangeList(countList):
+def createRangeList(countList,spreadAmount):
     newSet=[]
     maxNum = max(countList)
     for num in countList:
-        if(num in range(maxNum-7,maxNum)):
+        if(num in range(maxNum-spreadAmount,maxNum)):
             continue
         else:
             if(num not in newSet):
@@ -189,9 +211,18 @@ def createRangeList(countList):
 
     return newSet
 
-def generateNewSizes(tupleList,sizes):
+def generateNewSizes(tupleList,sizes,individualChar=False):
+    tupleList = sorted(tupleList, key=lambda x: x[1], reverse=True)
+
     countList = [i[1] for i in tupleList]
-    rangeList = createRangeList(countList)
+    if(individualChar):
+        rangeList = createRangeList(countList,0)
+    else:
+        rangeList = createRangeList(countList,6)
+
+
+    if(len(rangeList)>len(sizes)):
+        rangeList=rangeList[0:len(sizes)-1]
     newSizeList = []
     newTupleList = []
     for count in countList:
@@ -201,6 +232,11 @@ def generateNewSizes(tupleList,sizes):
                 added = True
                 newSizeList.append(sizes[index])
                 break
+        #hard coding this case. if all number counts are the same, set to default size of sizes[1]. 
+        if(len(rangeList)==1):
+            newSizeList.append(sizes[1])
+            continue
+        #last case for iteratin of loop
         if(not added):
             newSizeList.append(sizes[len(sizes)-1])
 
@@ -209,15 +245,16 @@ def generateNewSizes(tupleList,sizes):
 
     return newTupleList
 
+
 def main():
 
   #run parse function
-  fileName  = "KungFuPanda.txt"
+  fileName  = "LegoMovie.txt"
   amountOfCommon = 100
   charWordDic , common = parseFunction(fileName,amountOfCommon)
 
   #Default Sizes
-  sizes=[65,35,20,15,10]
+  sizes=[60,35,20,15,10]
 
   #generate wordCloud text sizes using default sizes. returns list tuple of (count,FontSize)
   tupleFontSizeList = generateNewSizes(common,sizes)
@@ -231,27 +268,70 @@ def main():
   mainFrame = tk.Frame(root, width=824, height=750)
   secondFrame = tk.Frame(root, width=192, height=750)
 
+
+
+
   mainFrame.config(bd=4, relief=tk.SOLID)
   secondFrame.config(bd=4, relief=tk.SOLID)
 
-
+  newChar = {}
+  for char in charWordDic:
+    charDic=parse.keepInCommon(charWordDic[char],common)
+    if(not charDic):
+        continue
+    else:
+        newChar[char]=charDic
   #this will be the character buttons will probably create for loop and generate multiple buttons
-  # button = tk.Button (secondFrame, text = "test",width = 192,command=testCommand)
-  # button.pack(side="top", fill="both")
+
 
   #Hover Overable label
-  hoverLabel = tk.Label(secondFrame, text="", width=192)
+  hoverLabel = tk.Label(secondFrame, text="HOVER OVER A WORD TO VIEW DETAILS", width=192)
   hoverLabel.config(font=("Courier", 10))
-  hoverLabel.pack(side="top", fill="both")
+
 
   #Create Main Word Cloud
   #using common as a list of tuples that contain word and count. 
-  createWordCloud(root,mainFrame,secondFrame,common, charWordDic, hoverLabel, tupleFontSizeList)
+
+
+  text = tk.Text(secondFrame, wrap="none")
+  vsb = tk.Scrollbar(orient="vertical", command=text.yview)
+  text.configure(yscrollcommand=vsb.set)
+
+
+  text.insert("end", "Characters: \n")
+
+  button = tk.Button (secondFrame, text = "ALL",command= lambda: createWordCloud(root,mainFrame,secondFrame,common, newChar, hoverLabel, tupleFontSizeList))
+  text.window_create("end", window=button)
+  text.insert("end", "\n")
+
+  num = 0 
+  for char in sorted(newChar):
+    if(len(newChar[char])<3):
+        continue
+    name = char
+    button = tk.Button (secondFrame, text = name,command= lambda name=char: createWordCloudChar(name,root,mainFrame,secondFrame,newChar,hoverLabel,common, sizes))
+    text.window_create("end", window=button)
+    text.insert("end", "\n")
+
+
+
+  text.configure(state="disabled")
+
+
+    
+  createWordCloud(root,mainFrame,secondFrame,common, newChar, hoverLabel, tupleFontSizeList)
 
   #left frame and right frame
   mainFrame.pack(side="left", fill="both")
   secondFrame.pack(side="right", fill="both")
+  hoverLabel.pack(side="top", fill="both")
+  vsb.pack(side="right", fill="y")
+  text.pack(fill="both", expand=True)
 
   root.mainloop()
 
-main()
+
+
+  
+if __name__ == "__main__":
+    main()
