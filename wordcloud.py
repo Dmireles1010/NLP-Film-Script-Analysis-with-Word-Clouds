@@ -72,25 +72,37 @@ def place_label(root, label, word,fontSize):
     redo = True
     tries = 0
     
-    colorIndex=random.randint(0,len(colors))-1
+    
     #algorithm to make sure word is not placed in same location as another word
+    # print(word)
     while redo:
+        colorIndex=random.randint(0,len(colors))-1
         if(tries>500):
-            newFont=10
-            label.config(font=("Courier", newFont),fg=colors[colorIndex])
-        elif(tries>1000):
-            newFont=5
-            label.config(font=("Courier", newFont),fg=colors[colorIndex])
-            redo=False
-        else:
-            label.config(font=("Courier", fontSize),fg=colors[colorIndex])
+            fontSize=10
+        elif(tries>10000):
+            fontSize=3
+
         tries+=1
+        # print(tries)
+        label.config(font=("Courier", fontSize),fg=colors[colorIndex])
+        # print(tries)
+        # print(fontSize)
         root.update()
         width = label.winfo_reqwidth()
         height = label.winfo_reqheight()
-        x = random.randint(0, 812-width)
-        y = random.randint(0, 750-height)
+        
+        try:
+          x = random.randint(0, 812-width)
+          y = random.randint(0, 750-height)
+        except ValueError:
+            if(tries>100000):
+                redo=False
+                return
+            else:
+                continue
 
+
+        # print(placements)
 
         x2=x+width
         y2=y+height
@@ -103,6 +115,9 @@ def place_label(root, label, word,fontSize):
                 if (y > placement[3] and y < placement[4]) or (y2 > placement[3] and y2 < placement[4]) or (ymid > placement[3] and ymid < placement[4]) or (placement[5] > y and placement[5] < y2):
                     redo = True
                     break
+                else:
+                    redo = False
+
             else:
                 redo = False
         if(len(placements)==0):
@@ -115,7 +130,7 @@ def place_label(root, label, word,fontSize):
 
     placements.append(place)
     labelDic[word]=[label,place]
-    # test[word][1]=place
+
     
 def createWordCloud(root,mainFrame,secondFrame, tuples, charDic, hoverLabel,tupleFontSizeList,individualChar=False,char=None):
     """This function generates words and places the words in the frames
@@ -140,17 +155,18 @@ def createWordCloud(root,mainFrame,secondFrame, tuples, charDic, hoverLabel,tupl
     placements.clear()
 
 
-
+    # print(tuples)
     index = 0
-
+    # print(labelDic)
     for tup in tuples:
+        # print(index)
         word = tup[0]
         count = tup[1]
         text = Text(mainFrame,secondFrame,word,count,charDic,hoverLabel,individualChar,char)
 
-
+        
         size = tupleFontSizeList[index][1]
-
+        
         place_label(root, text.label, word,size)
         index+=1
 
@@ -168,11 +184,13 @@ def createWordCloudChar(char,root,mainFrame,secondFrame,charWordDic, hoverLabel,
         sizez: list of default sizes 
     """
     tupleList = []
+
     # charDic=parse.keepInCommon(charWordDic[char],common)
     for word in charWordDic[char]:
         tupleList.append (  (word,charWordDic[char][word])  )
+    tupleList = sorted(tupleList, key=lambda x: x[1], reverse=True)
     tupleFontSizeList = generateNewSizes(tupleList,sizes,True)
-
+    # print(tupleList)
 
     # createWordCloud(root,mainFrame,secondFrame,common, newChar, hoverLabel, tupleFontSizeList)
     hoverLabel.configure(text=char+"\nHOVER OVER A WORD TO VIEW DETAILS")
@@ -220,7 +238,7 @@ def generateNewSizes(tupleList,sizes,individualChar=False):
 
     countList = [i[1] for i in tupleList]
     if(individualChar):
-        rangeList = createRangeList(countList,0)
+        rangeList = createRangeList(countList,1)
     else:
         rangeList = createRangeList(countList,6)
 
@@ -284,12 +302,13 @@ def main():
 
   newChar = {}
   for char in charWordDic:
-    charDic=parse.keepInCommon(charWordDic[char],common)
-    if(not charDic):
+    # charDic=parse.keepInCommon(charWordDic[char],common)
+    # charDic=charWordDic[char]
+    if(not charWordDic[char]):
         continue
     else:
-        newChar[char]=charDic
-  #this will be the character buttons will probably create for loop and generate multiple buttons
+        newChar[char]=charWordDic[char]
+  
 
 
 
@@ -312,7 +331,7 @@ def main():
   button = tk.Button (secondFrame, text = "ALL",command= lambda: createWordCloud(root,mainFrame,secondFrame,common, newChar, hoverLabel, tupleFontSizeList))
   text.window_create("end", window=button)
   text.insert("end", "\n")
-
+  #this will be the character buttons will probably create for loop and generate multiple buttons
   num = 0 
   for char in sorted(newChar):
     if(len(newChar[char])<3):
