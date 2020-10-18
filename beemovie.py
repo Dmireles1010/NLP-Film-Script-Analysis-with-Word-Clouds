@@ -20,7 +20,7 @@ def reduceLine(dialogue):
       keepReducing = False
   return spokenTxt
 spokenTxt = '                            BEE MOVIE\n'
-with codecs.open("originalBeeMovie.txt", 'r', 'utf-8') as f:
+with codecs.open("FilmScripts/originalBeeMovie.txt", 'r', 'utf-8') as f:
   # read the file content
   f = f.read()
   
@@ -54,6 +54,6 @@ with codecs.open("originalBeeMovie.txt", 'r', 'utf-8') as f:
   print(spokenTxt)
 
 
-with codecs.open("NewBeeMovie.txt", 'w', 'utf-8') as f:
+with codecs.open("FilmScripts/NewBeeMovie.txt", 'w', 'utf-8') as f:
   f.write(spokenTxt)
 
