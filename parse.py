@@ -273,6 +273,17 @@ def removeStopwordsDic(dic,stopwords):
   #formated as such {character : {word : 2 , anotherword : 4} }
   return characterDic
 
+def keepInCommon(dic,common):
+    newDic = {}
+    sort_orders = sorted(dic.items(), key=lambda x: x[1], reverse=True)
+    
+    for i in sort_orders:
+      #only show the words that are in common throughout the text
+      #character may have said more words but we're only showing those that are most common throughout the film
+      if i[0] in [lis[0] for lis in common]:
+        newDic[i[0]]=i[1]
+    return newDic
+
 def formatnSortByChar(dic,text,common):
   """This function returns a formated string of the words each character has said in common with the text
    
@@ -363,17 +374,21 @@ def main():
   charWordDic = removeStopwordsDic(charWordDic,stopwords)
 
   #Get 150 most common words from dialogue text
-  common = commonWords(spoken_text,50,stopwords)
+  common = commonWords(spoken_text,100,stopwords)
 
   #string that is formated to show only the words that each character said that is commonly said throughout the text 
   formatedString = formatnSortByChar(charWordDic,spoken_text,common)
 
   #Common Words said in all dialogue of film
-  print(common)
-
+  # print(common)
+  newcommon = [i[1] for i in common]
+  # print(newcommon)
+  # dic = keepInCommon(charWordDic["EMMET"],common)
+  # print(dic)
+  # print(len(dic))
   #formated string of each character's said words that are commonly said through the dialogue
-  print(formatedString)
+  # print(formatedString)
 
-main()
+# main()
 
 
