@@ -66,6 +66,11 @@ secondFrame = tk.Frame(root, width=192, height=750)
 mainFrame.config(bd=4, relief=tk.SOLID)
 secondFrame.config(bd=4, relief=tk.SOLID)
 
+# Sorts the contents of words in reverse alphabetical order
+# words.sort(reverse=True)
+
+# Sorts the contents of words by character length, short words first
+sorted(words, key=len)
 
 for word in words:
     label = tk.Label(mainFrame, text=word)
