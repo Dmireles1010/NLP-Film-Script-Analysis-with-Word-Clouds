@@ -249,7 +249,7 @@ def generateNewSizes(tupleList,sizes,individualChar=False):
 def main():
 
   #run parse function
-  fileName  = "LegoMovie.txt"
+  fileName  = "newBeemovie.txt"
   amountOfCommon = 100
   charWordDic , common = parseFunction(fileName,amountOfCommon)
 
